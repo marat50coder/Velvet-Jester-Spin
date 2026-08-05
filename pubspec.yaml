@@ -1,0 +1,56 @@
+name: spingame
+description: "Velvet Jester Spin - a theatrical role-transformation arcade."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  shared_preferences: ^2.3.3
+  audioplayers: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/sprites/playing_cards/
+    - assets/sprites/spotlights/
+    - assets/sprites/musical_instruments/
+    - assets/sprites/circus_props/
+    - assets/sprites/circus_animals/
+    - assets/sprites/jester_character/
+    - assets/sprites/jester_skins/
+    - assets/sprites/audience_characters/
+    - assets/sprites/role_icons_transformation_symbols/
+    - assets/sprites/magic_effects/
+    - assets/sprites/celebration_effects/
+    - assets/sprites/stage_decorations/
+    - assets/sprites/ropes_stage_elements/
+    - assets/Velvet_Jester_Spin_additional_assets/Game_Name.webp
+    - assets/Velvet_Jester_Spin_additional_assets/Vertical_Loading_Screen.webp
+    - assets/Velvet_Jester_Spin_additional_assets/Horizontal_Loading_Screen.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_1_asset.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_2_asset.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_3_asset.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_4_asset.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_5_asset.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_6_asset.webp
+    - assets/Velvet_Jester_Spin_gameplay_assets/bg_location_7_asset.webp
+    - assets/Velvet_Jester_Spin_sounds_assets/
+
+flutter_launcher_icons:
+  ios: true
+  android: true
+  remove_alpha_ios: true
+  image_path: "assets/app_icon/icon_1024.png"
+  adaptive_icon_foreground: "assets/app_icon/icon_1024.png"
+  adaptive_icon_background: "#2A0B2E"
