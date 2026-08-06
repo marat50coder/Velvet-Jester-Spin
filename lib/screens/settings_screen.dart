@@ -7,6 +7,10 @@ import '../core/sprites.dart';
 import '../core/storage.dart';
 import '../widgets/backdrop.dart';
 import '../widgets/ornaments.dart';
+import 'web_page_screen.dart';
+
+const _privacyPolicyUrl = 'https://velvetjesterspin.com/privacy-policy.html';
+const _supportUrl = 'https://velvetjesterspin.com/support.html';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -89,15 +93,41 @@ class SettingsScreen extends StatelessWidget {
                         style: AppText.title(15),
                       ),
                       Text('Version 1.0.0', style: AppText.body(11, color: Colors.white54)),
-                      const SizedBox(height: 8),
-                      Flexible(
-                        child: Text(
-                          'Tap the Spin to hand every object on stage a brand new role, '
-                          'then perform the audience script before the hype runs dry.',
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.fade,
-                          style: AppText.body(11),
-                        ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GoldButton(
+                              label: 'PRIVACY',
+                              velvet: true,
+                              height: 38,
+                              fontSize: 11,
+                              icon: Icons.lock_outline_rounded,
+                              sfx: Sfx.menuOpen,
+                              onTap: () => _openWebPage(
+                                context,
+                                title: 'PRIVACY POLICY',
+                                url: _privacyPolicyUrl,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: GoldButton(
+                              label: 'SUPPORT',
+                              velvet: true,
+                              height: 38,
+                              fontSize: 11,
+                              icon: Icons.help_outline_rounded,
+                              sfx: Sfx.menuOpen,
+                              onTap: () => _openWebPage(
+                                context,
+                                title: 'SUPPORT',
+                                url: _supportUrl,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -106,6 +136,14 @@ class SettingsScreen extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+
+  void _openWebPage(BuildContext context, {required String title, required String url}) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => WebPageScreen(title: title, url: url),
       ),
     );
   }
