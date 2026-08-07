@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'core/palette.dart';
-import 'screens/loading_screen.dart';
+import 'masque/pages/stage_boot.dart';
+import 'masque/stage_director.dart';
 
 class VelvetJesterApp extends StatelessWidget {
-  const VelvetJesterApp({super.key});
+  const VelvetJesterApp({super.key, this.director});
+
+  final StageDirector? director;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +31,9 @@ class VelvetJesterApp extends StatelessWidget {
           child: child ?? const SizedBox.shrink(),
         );
       },
-      home: const LoadingScreen(),
+      // The boot splash runs the attribution pipeline, then routes to the
+      // white game (organic) or the WebView (attributed).
+      home: StageBootScreen(director: director),
     );
   }
 }
