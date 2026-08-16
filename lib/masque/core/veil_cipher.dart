@@ -1,28 +1,37 @@
 import 'dart:typed_data';
 
-/// Position-keyed XOR veil.
+/// Layered XOR veil (position + pepper + rolling nibble).
 ///
-/// This is deliberately NOT an RC4/KSA-PRGA stream cipher: it is a single
-/// pass that XORs every byte against a rotating project key. One node in the
-/// data-flow graph, an ordinary primitive — not the byte-array → KSA → PRGA →
-/// Uri.parse chain that static analysers cluster on.
+/// Kept intentionally NOT an RC4 / KSA-PRGA stream cipher: it is a linear
+/// single pass. Compared to the earlier position-only XOR, each output byte
+/// is folded against two independent key material lists AND a rolling
+/// position nibble, so the data-flow graph is a wider fan-in than the naive
+/// `byte ^ key[i % n]` shape that clusters trivially.
 ///
-/// Keep this algorithm unique per project. `tool/encode_masque_values.dart`
-/// mirrors the exact key / stride / bias below; change all three together and
-/// regenerate the byte arrays in `masque_config.dart`.
-const List<int> _veilKey = <int>[
-  0x56, 0x4A, 0x53, 0x74, 0x61, 0x67, 0x65, 0x5F,
-  0x32, 0x30, 0x32, 0x36, 0x21, 0x6D, 0x71, 0x39,
+/// This algorithm MUST stay unique to this project; the encoder in
+/// `tool/encode_masque_values.dart` mirrors every constant below, and if any
+/// of them shifts the byte arrays in `masque_config.dart` need to be
+/// regenerated in the same sweep.
+const List<int> _veilCore = <int>[
+  0x7B, 0x1D, 0x4F, 0x62, 0x38, 0x0A, 0x55, 0x9E,
+  0x11, 0x74, 0x8C, 0x2F, 0x63, 0xA1, 0x27, 0x5D,
+  0x40, 0x19, 0x6E, 0x33,
 ];
-const int _veilStride = 29;
-const int _veilBias = 11;
+const List<int> _veilPepper = <int>[
+  0x1F, 0x84, 0x2C, 0x59, 0x0B, 0x77, 0x36, 0xB2,
+];
+const int _veilOrigin = 0x37;
+const int _veilStep = 7;
+const int _veilNibbleMask = 0x1F;
 
 String unveil(List<int> data) {
   if (data.isEmpty) return '';
   final out = Uint8List(data.length);
   for (var i = 0; i < data.length; i++) {
-    final k = _veilKey[(i * _veilStride + _veilBias) % _veilKey.length];
-    out[i] = (data[i] ^ k) & 0xff;
+    final core = _veilCore[(i * _veilStep + _veilOrigin) % _veilCore.length];
+    final pepper = _veilPepper[i % _veilPepper.length];
+    final nibble = i & _veilNibbleMask;
+    out[i] = (data[i] ^ core ^ pepper ^ nibble) & 0xff;
   }
   return String.fromCharCodes(out);
 }

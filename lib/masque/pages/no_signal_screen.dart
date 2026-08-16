@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -23,6 +26,8 @@ class NoSignalScreen extends StatefulWidget {
 class _NoSignalScreenState extends State<NoSignalScreen> {
   bool _checking = false;
   bool _stillOffline = false;
+  bool _navigated = false;
+  StreamSubscription<List<ConnectivityResult>>? _watch;
 
   @override
   void initState() {
@@ -34,23 +39,43 @@ class _NoSignalScreenState extends State<NoSignalScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    // Auto-recover: the moment iOS reports any live interface, retry
+    // without waiting for the user to spam the button.
+    _watch = widget.scout.changes.listen((states) {
+      if (_navigated || _checking) return;
+      final live = states.any((s) => s != ConnectivityResult.none);
+      if (live) unawaited(_retry(auto: true));
+    });
   }
 
-  Future<void> _retry() async {
-    if (_checking) return;
-    HapticFeedback.lightImpact();
+  @override
+  void dispose() {
+    _watch?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _retry({bool auto = false}) async {
+    if (_checking || _navigated) return;
+    if (!auto) HapticFeedback.lightImpact();
     setState(() {
       _checking = true;
       _stillOffline = false;
     });
-    bool online = false;
+    // Fast path: trust connectivity_plus (instant, iOS SCNetworkReachability
+    // under the hood). If ANY interface is up we hand off to the retry
+    // builder — WebStage will re-attempt the actual load and will bounce
+    // back here if it truly fails. DNS-probing here would block for up to
+    // ~7s right after WiFi returns because iOS hasn't refreshed its DNS
+    // cache yet — that's the "nothing happens on first tap" bug.
+    bool live = false;
     try {
-      online = await widget.scout.canReachNetwork();
+      live = await widget.scout.hasInterface();
     } catch (_) {
-      online = false;
+      live = false;
     }
     if (!mounted) return;
-    if (online) {
+    if (live) {
+      _navigated = true;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute<void>(builder: widget.retryBuilder),
       );
@@ -97,7 +122,7 @@ class _NoSignalScreenState extends State<NoSignalScreen> {
                   width: width,
                   height: height,
                   busy: _checking,
-                  onTap: _retry,
+                  onTap: () => _retry(),
                 ),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 180),

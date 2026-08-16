@@ -86,7 +86,18 @@ class StageDirector {
     progress(0.48);
     await tracker.awaitSignals();
     progress(0.72);
-    final reply = await _requestConfig();
+    var reply = await _requestConfig();
+    // First-launch attribution race: if AppsFlyer's install callback hadn't
+    // fired by the first `awaitSignals` deadline, the server correctly
+    // answers "No data" for our empty payload. Wait a bit longer for the
+    // install signal and retry ONCE — this is safe here because the route is
+    // still `undecided`; we are not flipping a returning user's decision (§6).
+    if (!reply.hasDestination && !tracker.hasInstallSignal) {
+      await tracker.awaitInstall(const Duration(seconds: 14));
+      if (tracker.hasInstallSignal) {
+        reply = await _requestConfig();
+      }
+    }
     progress(1);
     if (reply.hasDestination) {
       await vault.saveRoute(StageRoute.portal);

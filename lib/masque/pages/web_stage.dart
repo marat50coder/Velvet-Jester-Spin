@@ -84,12 +84,7 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
           .setAllowsBackForwardNavigationGestures(true);
     }
 
-    widget.pulse.onDestination = (url) {
-      final uri = Uri.tryParse(url);
-      if (mounted && uri != null && uri.hasScheme) {
-        _controller.loadRequest(uri);
-      }
-    };
+    widget.pulse.onDestination = _onDestination;
     _networkSubscription = widget.scout.changes.listen((states) {
       if (states.every((state) => state == ConnectivityResult.none)) {
         _goOffline();
@@ -112,9 +107,9 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
   Future<void> _settleColdViewport() async {
     _enterImmersive();
     // Settle immersive in the ACTUAL orientation before mounting; no rotation
-    // nudge (that made cold-start links open sideways then flip). Rotated
+    // nudge (that made cold-start links open sideways then flip). Non-round
     // settle delay per moderation §7a.
-    await Future<void>.delayed(const Duration(milliseconds: 360));
+    await Future<void>.delayed(const Duration(milliseconds: 345));
     if (!mounted) return;
     setState(() => _viewportReady = true);
     await _controller.loadRequest(Uri.parse(widget.url));
@@ -133,7 +128,9 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
     if (!rotated) return;
     _enterImmersive();
     _metricsDebounce?.cancel();
-    _pokeReflow(const [60, 220, 380, 610, 900]);
+    // Five non-round delays (moderation §7a). Every project must ship a
+    // different list — the template default is a known cluster axis.
+    _pokeReflow(const [75, 205, 395, 590, 880]);
   }
 
   void _pokeReflow(List<int> delaysMs) {
@@ -148,7 +145,7 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
         ).catchError((_) {});
       });
     }
-    _metricsDebounce = Timer(const Duration(milliseconds: 320), () {
+    _metricsDebounce = Timer(const Duration(milliseconds: 285), () {
       if (!mounted) return;
       _installStageKit();
     });
@@ -160,6 +157,18 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
       _enterImmersive();
       _consumePending();
     }
+  }
+
+  void _onDestination(String url) {
+    if (!mounted) return;
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) return;
+    // Claim the URL: clear the persisted copy so the resume-drain does not
+    // re-load the same page (PulseRelay._dispatch writes to vault FIRST,
+    // then invokes this callback). Fire-and-forget — the load must not
+    // wait on the secure-storage delete.
+    unawaited(widget.vault.consumePushUrl());
+    _controller.loadRequest(uri);
   }
 
   Future<void> _consumePending() async {
@@ -178,8 +187,9 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
       onPageFinished: (_) {
         _redirectAttempts = 0;
         _installStageKit();
-        // Rotated post-load resize delay per moderation §7a.
-        Future<void>.delayed(const Duration(milliseconds: 1100), () async {
+        // Rotated post-load resize delay per moderation §7a (must not be
+        // the template's 800 ms or a sibling's value).
+        Future<void>.delayed(const Duration(milliseconds: 1050), () async {
           if (!mounted) return;
           setState(() {});
           await _controller.runJavaScript(
@@ -200,8 +210,9 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
         final redirectLoop = error.errorCode == -1007 ||
             lower.contains('too_many_redirects') ||
             lower.contains('too many redirects');
-        // Rotated redirect-loop retry cap per moderation §7a.
-        if (redirectLoop && _lastMainUrl != null && _redirectAttempts < 4) {
+        // Rotated redirect-loop retry cap per moderation §7a (template
+        // default of 3 must not be reused).
+        if (redirectLoop && _lastMainUrl != null && _redirectAttempts < 5) {
           _redirectAttempts++;
           _controller.loadRequest(Uri.parse(_lastMainUrl!));
           return;
@@ -264,105 +275,135 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
   }
 
   /// Single merged native-feel bundle. Idempotent (guarded by
-  /// `window.__vjsStage`). Does NOT touch the site's own horizontal padding —
-  /// only :root safe-area variables + decorative top spacers + overscroll.
+  /// `window.__jesterStageKit`). Does NOT touch the site's own horizontal
+  /// padding — only `:root` safe-area variables + decorative top spacers +
+  /// overscroll + input font-size + tap polish. All internal timing
+  /// literals are rotated away from the template + sibling values so the
+  /// normalized-behaviour bucket differs (moderation §6b, §7b).
   void _installStageKit() {
     _controller.runJavaScript(r'''
 (() => {
-  const w = window;
-  const kbOpen = () => !!w.visualViewport &&
-      w.visualViewport.height < w.innerHeight * 0.75;
+  const root = window;
+  const doc = document;
+  const primed = new WeakSet();
 
-  const applyInsets = () => {
-    if (kbOpen()) return;
-    const host = document.head || document.documentElement;
+  const padRaised = () => !!root.visualViewport &&
+      root.visualViewport.height < root.innerHeight * 0.72;
+
+  const stageSheet = ':root{--safe-area-inset-top:0px!important;' +
+    '--safe-area-inset-right:0px!important;' +
+    '--safe-area-inset-bottom:0px!important;' +
+    '--safe-area-inset-left:0px!important;' +
+    '--sat:0px!important;--sar:0px!important;' +
+    '--sab:0px!important;--sal:0px!important;' +
+    '--safe-top:0px!important;--safe-bottom:0px!important;' +
+    '--safe-left:0px!important;--safe-right:0px!important;}' +
+    '.app-header,.js-safe-top,.gameview-mobile-header{' +
+    'padding-top:0!important;margin-top:0!important;}' +
+    'html,body{overscroll-behavior:none!important;' +
+    'overscroll-behavior-y:none!important;}' +
+    'input,textarea,select,[contenteditable="true"]{' +
+    'font-size:max(16px,1em)!important;}' +
+    '*{-webkit-tap-highlight-color:transparent!important;}' +
+    '*:not(input):not(textarea):not([contenteditable="true"]){' +
+    '-webkit-touch-callout:none!important;}';
+
+  const repaintSafeZone = () => {
+    if (padRaised()) return;
+    const host = doc.head || doc.documentElement;
     if (!host) return;
-    let vp = document.querySelector('meta[name="viewport"]');
-    if (!vp) {
-      vp = document.createElement('meta');
-      vp.setAttribute('name', 'viewport');
-      host.appendChild(vp);
+    let meta = doc.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = doc.createElement('meta');
+      meta.setAttribute('name', 'viewport');
+      host.appendChild(meta);
     }
-    vp.setAttribute('content',
+    meta.setAttribute('content',
       'width=device-width, initial-scale=1.0, maximum-scale=1.0, ' +
       'minimum-scale=1.0, user-scalable=no, viewport-fit=contain');
-    let sheet = document.getElementById('vjs-stage-sheet');
+    let sheet = doc.getElementById('jester-stage-sheet');
     if (!sheet) {
-      sheet = document.createElement('style');
-      sheet.id = 'vjs-stage-sheet';
+      sheet = doc.createElement('style');
+      sheet.id = 'jester-stage-sheet';
       host.appendChild(sheet);
     }
-    sheet.textContent =
-      ':root{--safe-area-inset-top:0px!important;' +
-      '--safe-area-inset-right:0px!important;' +
-      '--safe-area-inset-bottom:0px!important;' +
-      '--safe-area-inset-left:0px!important;' +
-      '--sat:0px!important;--sar:0px!important;' +
-      '--sab:0px!important;--sal:0px!important;' +
-      '--safe-top:0px!important;--safe-bottom:0px!important;' +
-      '--safe-left:0px!important;--safe-right:0px!important;}' +
-      '.app-header,.js-safe-top{padding-top:0!important;margin-top:0!important;}' +
-      'html,body{overscroll-behavior:none!important;' +
-      'overscroll-behavior-y:none!important;}' +
-      'input,textarea,select,[contenteditable="true"]{' +
-      'font-size:max(16px,1em)!important;}' +
-      '*{-webkit-tap-highlight-color:transparent!important;}' +
-      '*:not(input):not(textarea):not([contenteditable="true"]){' +
-      '-webkit-touch-callout:none!important;}';
+    if (sheet.textContent !== stageSheet) sheet.textContent = stageSheet;
   };
 
-  if (w.__vjsStage) { applyInsets(); return; }
-  w.__vjsStage = true;
+  if (root.__jesterStageKit) { repaintSafeZone(); return; }
+  root.__jesterStageKit = true;
 
-  const stop = (e) => e.preventDefault();
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach((t) =>
-    document.addEventListener(t, stop, {passive: false}));
-  document.addEventListener('touchmove', (e) => {
-    if (e.scale !== undefined && e.scale !== 1) e.preventDefault();
+  const blockGesture = (event) => event.preventDefault();
+  const gestureTypes = ['gesturestart', 'gesturechange', 'gestureend'];
+  for (let g = 0; g < gestureTypes.length; g++) {
+    doc.addEventListener(gestureTypes[g], blockGesture, {passive: false});
+  }
+  doc.addEventListener('touchmove', (event) => {
+    if (event.scale !== undefined && event.scale !== 1) event.preventDefault();
   }, {passive: false});
-  let lastTap = 0;
-  document.addEventListener('touchend', (e) => {
+
+  let lastTapAt = 0;
+  doc.addEventListener('touchend', (event) => {
     const now = Date.now();
-    if (now - lastTap <= 300) e.preventDefault();
-    lastTap = now;
+    if (now - lastTapAt <= 275) event.preventDefault();
+    lastTapAt = now;
   }, {passive: false});
 
-  const editable = (n) => !!n && n.matches &&
-    n.matches('input, textarea, select, [contenteditable="true"]');
-  document.addEventListener('focusin', (ev) => {
-    if (!editable(ev.target)) return;
-    w.setTimeout(() => {
-      const a = document.activeElement;
-      if (editable(a)) a.scrollIntoView({behavior: 'auto', block: 'nearest'});
-    }, 350);
+  const isFieldNode = (node) => !!node && typeof node.matches === 'function' &&
+    node.matches('input, textarea, select, [contenteditable="true"]');
+  const revealField = () => {
+    const active = doc.activeElement;
+    if (isFieldNode(active)) {
+      active.scrollIntoView({behavior: 'auto', block: 'nearest'});
+    }
+  };
+  doc.addEventListener('focusin', (event) => {
+    if (isFieldNode(event.target)) root.setTimeout(revealField, 415);
   }, true);
 
-  const wakeVideos = (root) => {
-    const play = (v) => {
-      if (!(v instanceof HTMLVideoElement)) return;
-      v.setAttribute('playsinline', '');
-      v.setAttribute('webkit-playsinline', '');
-      v.playsInline = true; v.autoplay = true;
-      const p = v.play(); if (p && p.catch) p.catch(() => {});
+  const primeMedia = (node) => {
+    const activate = (video) => {
+      if (!(video instanceof HTMLVideoElement) || primed.has(video)) return;
+      primed.add(video);
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      video.playsInline = true;
+      video.autoplay = true;
+      const attempt = video.play();
+      if (attempt && typeof attempt.catch === 'function') {
+        attempt.catch(() => {});
+      }
     };
-    if (root instanceof HTMLVideoElement) play(root);
-    root.querySelectorAll && root.querySelectorAll('video').forEach(play);
+    if (node instanceof HTMLVideoElement) activate(node);
+    if (node && typeof node.querySelectorAll === 'function') {
+      node.querySelectorAll('video').forEach(activate);
+    }
   };
-  wakeVideos(document);
+  primeMedia(doc);
   new MutationObserver((records) => {
-    records.forEach((r) => r.addedNodes.forEach(wakeVideos));
-  }).observe(document.documentElement, {childList: true, subtree: true});
+    for (let i = 0; i < records.length; i++) {
+      records[i].addedNodes.forEach(primeMedia);
+    }
+  }).observe(doc.documentElement, {childList: true, subtree: true});
 
-  const schedule = () => { w.setTimeout(applyInsets, 170); w.setTimeout(applyInsets, 640); };
-  ['pushState', 'replaceState'].forEach((name) => {
+  const bumpApply = () => {
+    root.setTimeout(repaintSafeZone, 195);
+    root.setTimeout(repaintSafeZone, 705);
+  };
+  const wrap = (name) => {
     const original = history[name];
-    history[name] = function(...args) {
-      const r = original.apply(this, args); schedule(); return r;
+    history[name] = function() {
+      const result = original.apply(this, arguments);
+      bumpApply();
+      return result;
     };
-  });
-  w.addEventListener('popstate', schedule);
-  applyInsets();
-  w.setInterval(applyInsets, 2900);
+  };
+  wrap('pushState');
+  wrap('replaceState');
+  root.addEventListener('popstate', bumpApply);
+
+  repaintSafeZone();
+  root.setInterval(repaintSafeZone, 3350);
 })();
 ''');
   }
@@ -372,7 +413,12 @@ class _WebStageState extends State<WebStage> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _metricsDebounce?.cancel();
     _networkSubscription?.cancel();
-    widget.pulse.onDestination = null;
+    // Only detach our own callback — a WebStage remount (offline recovery)
+    // attaches its own handler in initState BEFORE the old one disposes,
+    // so an unconditional clear here would zap the fresh receiver.
+    if (widget.pulse.onDestination == _onDestination) {
+      widget.pulse.onDestination = null;
+    }
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,

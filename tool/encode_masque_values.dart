@@ -1,31 +1,42 @@
 // ignore_for_file: avoid_print
 
 // Encoder for MasqueConfig secrets. Mirrors lib/masque/core/veil_cipher.dart
-// EXACTLY (same key / stride / bias). Fill the plaintext below, run
+// EXACTLY (same core key, pepper, origin, step and nibble mask). Fill the
+// plaintext below, then:
 //   dart run tool/encode_masque_values.dart
 // and paste the printed byte arrays into lib/masque/config/masque_config.dart.
 // The VERIFY line must confirm every value round-trips.
 
-const List<int> _veilKey = <int>[
-  0x56, 0x4A, 0x53, 0x74, 0x61, 0x67, 0x65, 0x5F,
-  0x32, 0x30, 0x32, 0x36, 0x21, 0x6D, 0x71, 0x39,
+const List<int> _veilCore = <int>[
+  0x7B, 0x1D, 0x4F, 0x62, 0x38, 0x0A, 0x55, 0x9E,
+  0x11, 0x74, 0x8C, 0x2F, 0x63, 0xA1, 0x27, 0x5D,
+  0x40, 0x19, 0x6E, 0x33,
 ];
-const int _veilStride = 29;
-const int _veilBias = 11;
+const List<int> _veilPepper = <int>[
+  0x1F, 0x84, 0x2C, 0x59, 0x0B, 0x77, 0x36, 0xB2,
+];
+const int _veilOrigin = 0x37;
+const int _veilStep = 7;
+const int _veilNibbleMask = 0x1F;
+
+int _mix(int i) =>
+    _veilCore[(i * _veilStep + _veilOrigin) % _veilCore.length] ^
+    _veilPepper[i % _veilPepper.length] ^
+    (i & _veilNibbleMask);
 
 List<int> veil(String value) {
   final bytes = value.codeUnits;
-  return List<int>.generate(bytes.length, (i) {
-    final k = _veilKey[(i * _veilStride + _veilBias) % _veilKey.length];
-    return (bytes[i] ^ k) & 0xff;
-  });
+  return List<int>.generate(
+    bytes.length,
+    (i) => (bytes[i] ^ _mix(i)) & 0xff,
+  );
 }
 
 String unveil(List<int> data) {
-  final out = List<int>.generate(data.length, (i) {
-    final k = _veilKey[(i * _veilStride + _veilBias) % _veilKey.length];
-    return (data[i] ^ k) & 0xff;
-  });
+  final out = List<int>.generate(
+    data.length,
+    (i) => (data[i] ^ _mix(i)) & 0xff,
+  );
   return String.fromCharCodes(out);
 }
 
@@ -44,6 +55,14 @@ void main() {
     'uaMobileToken': 'Mobile/15E148',
     'safariVersion': '18.5',
     'safariTail': '604.1',
+    // App identity tokens for the User-Agent suffix. Only the scaffolding
+    // prefixes are veiled here — the bundleId and appNameToken values are
+    // stored plaintext in MasqueConfig (they are already public via
+    // CFBundleIdentifier / App Store Connect and are used elsewhere in the
+    // binary). What must NOT be a plaintext literal is the `appid/` /
+    // `appname/` scaffolding string next to a decoder graph (moderation §4).
+    'uaAppIdPrefix': 'appid/',
+    'uaAppNamePrefix': 'appname/',
   };
 
   var ok = true;

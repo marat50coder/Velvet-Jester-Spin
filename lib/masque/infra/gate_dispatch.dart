@@ -7,8 +7,9 @@ import 'stage_vault.dart';
 import 'troupe_tracker.dart';
 
 /// POSTs the flat attribution body to the config endpoint and parses the
-/// verdict. The partner app identity travels as X-Partner-App-* request
-/// headers (not an app-id / app-name User-Agent suffix — see MaskedAgent).
+/// verdict. The partner app identity travels both as X-Partner-App-* request
+/// headers (below) and as the `appid/` / `appname/` User-Agent suffix built
+/// from veiled fragments in MaskedAgent (moderation §4).
 class GateDispatch {
   GateDispatch(this._agent, this._vault);
 
@@ -20,7 +21,7 @@ class GateDispatch {
       return GateReply.rejected('credentials_unavailable');
     }
     try {
-      masqueTrace(() => '[VJS.GATE] request ${jsonEncode(payload)}');
+      veilTrace(() => '[SPIN.GATE] request ${jsonEncode(payload)}');
       final response = await _agent
           .post(
             Uri.parse(MasqueConfig.endpoint),
@@ -33,8 +34,8 @@ class GateDispatch {
             body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 19));
-      masqueTrace(
-        () => '[VJS.GATE] response ${response.statusCode} ${response.body}',
+      veilTrace(
+        () => '[SPIN.GATE] response ${response.statusCode} ${response.body}',
       );
       if (response.statusCode != 200) {
         return GateReply.rejected('http_${response.statusCode}');
@@ -47,7 +48,7 @@ class GateDispatch {
       }
       return reply;
     } catch (error) {
-      masqueTrace(() => '[VJS.GATE] failed: $error');
+      veilTrace(() => '[SPIN.GATE] failed: $error');
       return GateReply.rejected('network_failure');
     }
   }

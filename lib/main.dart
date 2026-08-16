@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -46,7 +48,7 @@ Future<void> main() async {
       productionServicesReady = true;
     } catch (error) {
       assert(() {
-        debugPrint('[VJS.BOOT] Firebase.initializeApp failed: $error');
+        debugPrint('[SPIN.BOOT] Firebase.initializeApp failed: $error');
         return true;
       }());
     }
@@ -60,7 +62,7 @@ Future<void> main() async {
       } catch (error) {
         // App Check must never block FCM / gray routing.
         assert(() {
-          debugPrint('[VJS.BOOT] AppCheck skipped: $error');
+          debugPrint('[SPIN.BOOT] AppCheck skipped: $error');
           return true;
         }());
       }
@@ -69,6 +71,11 @@ Future<void> main() async {
 
   final scout = ReachScout();
   final pulse = PulseRelay(vault, enabled: productionServicesReady);
+  // Kick pulse.boot() early (fire-and-forget) so onMessageOpenedApp is
+  // registered BEFORE any background/foreground tap can fire. Awaiting
+  // would delay first frame; the pipeline will `await pulse.boot()` again
+  // at the correct moment — the future is idempotent (see PulseRelay).
+  unawaited(pulse.boot());
   final tracker = TroupeTracker(agent);
   final director = StageDirector(
     vault: vault,

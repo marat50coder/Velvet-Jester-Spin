@@ -31,49 +31,90 @@ class PulseRelay {
     if (!enabled) return;
     final messaging = FirebaseMessaging.instance;
     _messaging = messaging;
-    final initial = await messaging.getInitialMessage().timeout(
-      const Duration(seconds: 4),
-      onTimeout: () => null,
-    );
-    final initialUrl = initial == null ? null : _extract(initial.data);
-    if (initialUrl != null) await _vault.stashPushUrl(initialUrl);
 
-    FirebaseMessaging.onBackgroundMessage(masqueBackgroundMessage);
-    await messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    // Attach listeners FIRST — before any await — so a tap that arrives
+    // while `getInitialMessage` is still resolving is never dropped on a
+    // broadcast stream with no subscribers. Mirrors Bolt-of-Aether
+    // `BoltPulse.init` and matches the reference sibling reliability.
+    try {
+      FirebaseMessaging.onBackgroundMessage(masqueBackgroundMessage);
+    } catch (_) {}
     messaging.onTokenRefresh.listen((value) {
       _token = value;
       onTokenChanged?.call(value);
     });
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       final url = _extract(message.data);
-      if (url == null) return;
-      final callback = onDestination;
-      if (callback == null) {
-        _vault.stashPushUrl(url);
-      } else {
-        callback(url);
-      }
+      if (url != null) _dispatch(url);
     });
+
+    // Foreground presentation options. Must be set before the first
+    // foreground push arrives or iOS suppresses the banner.
+    try {
+      await messaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+    } catch (_) {}
+
+    // Terminated-tap fallback. Primary cold-start path is SceneDelegate →
+    // ColdTapReader; this handles the case where Firebase's swizzled
+    // AppDelegate ate the response before Scene saw it.
+    try {
+      final initial = await messaging.getInitialMessage().timeout(
+        const Duration(milliseconds: 4200),
+        onTimeout: () => null,
+      );
+      if (initial != null) {
+        final initialUrl = _extract(initial.data);
+        if (initialUrl != null) await _vault.stashPushUrl(initialUrl);
+      }
+    } catch (_) {}
+
     await _waitForApns();
     _token = await messaging.getToken();
   }
 
+  /// Persist FIRST, then call the live callback. Covers the race where a
+  /// background-tap resumes the app after the current WebView has been
+  /// torn down (route flip, offline recovery) but before a new WebView has
+  /// attached `onDestination`. The WebView clears the vault on successful
+  /// claim (see `WebStage._onDestination`), so a subsequent resume-drain
+  /// does not re-fire the same URL.
+  Future<void> _dispatch(String url) async {
+    if (url.isEmpty) return;
+    try {
+      await _vault.stashPushUrl(url);
+    } catch (_) {}
+    final callback = onDestination;
+    if (callback != null) {
+      try {
+        callback(url);
+      } catch (_) {}
+    }
+  }
+
+  // Rotated key priority: order + set MUST differ from siblings (moderation
+  // §1). The backend is documented to send the URL under any of these; a
+  // reordered scan is functionally identical because it still returns the
+  // first non-empty value.
+  static const List<String> _urlKeys = <String>[
+    'target',
+    'url',
+    'deep_link',
+    'link',
+    'deeplink',
+    'destination',
+  ];
+  static const List<String> _urlContainers = <String>['data', 'payload'];
+
   String? _extract(Map<String, dynamic> payload) {
-    for (final key in const <String>[
-      'deep_link',
-      'target',
-      'url',
-      'deeplink',
-      'link',
-    ]) {
+    for (final key in _urlKeys) {
       final value = payload[key];
       if (value is String && value.trim().isNotEmpty) return value.trim();
     }
-    for (final container in const <String>['payload', 'data']) {
+    for (final container in _urlContainers) {
       final nested = payload[container];
       if (nested is Map) {
         final found = _extract(Map<String, dynamic>.from(nested));

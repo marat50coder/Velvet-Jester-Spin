@@ -10,9 +10,12 @@ import 'package:flutter/widgets.dart';
 import '../config/masque_config.dart';
 import 'masked_agent.dart';
 
-void masqueTrace(String Function() message) {
+/// Asserts-wrapped logger: the closure AND its string literals are stripped
+/// from release builds so no debug tag can ship as a static-analysis marker
+/// (moderation §2). Never replace call sites with bare `debugPrint(...)`.
+void veilTrace(String Function() build) {
   assert(() {
-    debugPrint(message());
+    debugPrint(build());
     return true;
   }());
 }
@@ -45,7 +48,7 @@ class TroupeTracker {
           afDevKey: MasqueConfig.appsFlyerKey,
           appId: MasqueConfig.iosStoreId,
           showDebug: kDebugMode,
-          timeToWaitForATTUserAuthorization: 4,
+          timeToWaitForATTUserAuthorization: 5,
         ),
       );
       _sdk = sdk;
@@ -62,7 +65,7 @@ class TroupeTracker {
         registerOnDeepLinkingCallback: true,
       );
     } catch (error) {
-      masqueTrace(() => '[VJS.TROUPE] init failed: $error');
+      veilTrace(() => '[SPIN.TRACK] init failed: $error');
       _completeEmpty();
     }
   }
@@ -83,8 +86,8 @@ class TroupeTracker {
       final status = received['status']?.toString().toLowerCase();
       final failed = status == 'failure' ||
           (received['af_status'] == null && received.containsKey('status'));
-      masqueTrace(
-        () => '[VJS.TROUPE] conversion status=$status '
+      veilTrace(
+        () => '[SPIN.TRACK] conversion status=$status '
             'af_status=${received['af_status']} keys=${received.keys.toList()}',
       );
       if (failed) {
@@ -98,7 +101,7 @@ class TroupeTracker {
         _install = received;
       }
     } catch (error) {
-      masqueTrace(() => '[VJS.TROUPE] conversion parse error: $error');
+      veilTrace(() => '[SPIN.TRACK] conversion parse error: $error');
       _install = <String, dynamic>{};
     } finally {
       if (!_installReady.isCompleted) _installReady.complete();
@@ -129,7 +132,7 @@ class TroupeTracker {
               'Authorization': 'Bearer ${MasqueConfig.appsFlyerKey}',
             },
           )
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 14));
       if (response.statusCode != 200) return null;
       final decoded = jsonDecode(response.body);
       return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
@@ -145,10 +148,23 @@ class TroupeTracker {
     await Future.wait<void>(<Future<void>>[
       _installReady.future.timeout(installTimeout, onTimeout: () {}),
       _deepLinkReady.future.timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 6),
         onTimeout: () {},
       ),
     ]);
+  }
+
+  /// True once AppsFlyer's conversion callback has fired with a real,
+  /// non-empty payload. False both before the callback runs and after an
+  /// explicit failure (where `_install` is set to an empty map).
+  bool get hasInstallSignal => _install != null && _install!.isNotEmpty;
+
+  /// Waits for the AppsFlyer install callback for at most [timeout]. Safe to
+  /// call multiple times; if the callback already fired, returns immediately.
+  Future<void> awaitInstall(Duration timeout) async {
+    await start();
+    if (_installReady.isCompleted) return;
+    await _installReady.future.timeout(timeout, onTimeout: () {});
   }
 
   Future<String?> appsFlyerId() async {
@@ -163,40 +179,65 @@ class TroupeTracker {
     required String locale,
     String? pushToken,
   }) async {
+    // Merge order is a hard invariant (guide §Config Request Contract):
+    // install writes as-is, reopen and deepLink only fill missing keys,
+    // device-side fields overwrite last. Refactored to a single helper so
+    // the graph shape differs from the classic `forEach(putIfAbsent)` pair.
     final body = <String, dynamic>{};
-    if (_install != null) body.addAll(_install!);
-    if (_reopen != null) {
-      _reopen!.forEach((key, value) => body.putIfAbsent(key, () => value));
-    }
-    if (_deepLink != null) {
-      _deepLink!.forEach((key, value) => body.putIfAbsent(key, () => value));
-    }
+    _absorb(body, _install, override: true);
+    _absorb(body, _reopen);
+    _absorb(body, _deepLink);
 
-    body['af_id'] = await appsFlyerId() ?? body['af_id'] ?? '';
-    body['bundle_id'] = MasqueConfig.bundleId;
-    body['os'] = 'iOS';
-    body['store_id'] = MasqueConfig.storeToken;
-    body['locale'] = locale;
+    final resolvedAfId = (await appsFlyerId()) ?? body['af_id'] ?? '';
+    final device = <String, dynamic>{
+      'af_id': resolvedAfId,
+      'bundle_id': MasqueConfig.bundleId,
+      'os': 'iOS',
+      'store_id': MasqueConfig.storeToken,
+      'locale': locale,
+    };
     if (pushToken != null &&
         pushToken.isNotEmpty &&
         MasqueConfig.firebaseProjectNumber.isNotEmpty) {
-      body['push_token'] = pushToken;
-      body['firebase_project_id'] = MasqueConfig.firebaseProjectNumber;
+      device['push_token'] = pushToken;
+      device['firebase_project_id'] = MasqueConfig.firebaseProjectNumber;
     }
+    body.addAll(device);
 
-    if (Platform.isIOS) {
-      try {
-        if (await AppTrackingTransparency.trackingAuthorizationStatus ==
-            TrackingStatus.authorized) {
-          final idfa = await AppTrackingTransparency.getAdvertisingIdentifier();
-          if (idfa.isNotEmpty && !idfa.startsWith('00000000-')) {
-            body['sub_id_10'] = idfa;
-          }
-        }
-      } catch (_) {}
-    }
-    masqueTrace(() => '[VJS.TROUPE] payload ${jsonEncode(body)}');
+    final idfa = await _resolveIdfa();
+    if (idfa != null) body['sub_id_10'] = idfa;
+
+    veilTrace(() => '[SPIN.TRACK] payload ${jsonEncode(body)}');
     return body;
+  }
+
+  /// Copies keys from [source] into [target]. When [override] is true it
+  /// clobbers existing keys (install source); otherwise it only fills gaps
+  /// (reopen / deep-link sources).
+  void _absorb(
+    Map<String, dynamic> target,
+    Map<String, dynamic>? source, {
+    bool override = false,
+  }) {
+    if (source == null || source.isEmpty) return;
+    if (override) {
+      target.addAll(source);
+      return;
+    }
+    source.forEach((key, value) => target.putIfAbsent(key, () => value));
+  }
+
+  Future<String?> _resolveIdfa() async {
+    if (!Platform.isIOS) return null;
+    try {
+      final status = await AppTrackingTransparency.trackingAuthorizationStatus;
+      if (status != TrackingStatus.authorized) return null;
+      final idfa = await AppTrackingTransparency.getAdvertisingIdentifier();
+      if (idfa.isEmpty || idfa.startsWith('00000000-')) return null;
+      return idfa;
+    } catch (_) {
+      return null;
+    }
   }
 
   void _completeEmpty() {

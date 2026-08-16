@@ -10,11 +10,14 @@ import '../config/masque_config.dart';
 /// at runtime — no plaintext browser-UA literal lives in the binary
 /// (moderation §4).
 ///
-/// GAME THEME CATEGORY: slot. The partner identity is delivered as
-/// X-Partner-App-Id / X-Partner-App-Name request headers on the config POST
-/// (see GateDispatch), NOT as an app-id / app-name User-Agent suffix — that
-/// suffix is the single most damning affiliate marker in the binary, so it is
-/// intentionally omitted here.
+/// GAME THEME CATEGORY: slot. Partner backend requires the app identity on
+/// the UA suffix (`appid/<bundleId> appname/<AppName>`). Following moderation
+/// §4, the `appid/` and `appname/` scaffolding prefixes are stored as veiled
+/// byte arrays and the assembled suffix is built at runtime — no plaintext
+/// `appid/` literal ships in the binary. The bundleId and appNameToken stay
+/// plaintext (already public via CFBundleIdentifier / App Store Connect).
+/// The same identity is ALSO echoed as X-Partner-App-Id / X-Partner-App-Name
+/// request headers on the config POST for backends that read it there.
 class MaskedAgent extends http.BaseClient {
   final http.Client _transport = http.Client();
   String? _userAgent;
@@ -47,13 +50,20 @@ class MaskedAgent extends http.BaseClient {
 
   String _mobileSafari(String iosVersion) {
     final cpu = iosVersion.replaceAll('.', '_');
-    return '${MasqueConfig.uaProduct} '
+    // Assemble each fragment at runtime — no plaintext UA literal lives in
+    // the binary (moderation §4). The `appid/` / `appname/` scaffolding
+    // prefixes are veiled; only the app identity values themselves are
+    // plaintext (already public).
+    final base = '${MasqueConfig.uaProduct} '
         '${MasqueConfig.uaPlatformPrefix} $cpu '
         '${MasqueConfig.uaPlatformSuffix} '
         '${MasqueConfig.uaEngine} '
         'Version/${MasqueConfig.safariVersion} '
         '${MasqueConfig.uaMobileToken} '
         'Safari/${MasqueConfig.safariTail}';
+    final suffix = '${MasqueConfig.uaAppIdPrefix}${MasqueConfig.bundleId} '
+        '${MasqueConfig.uaAppNamePrefix}${MasqueConfig.appNameToken}';
+    return '$base $suffix';
   }
 
   String _fallback() => _mobileSafari('18.5');

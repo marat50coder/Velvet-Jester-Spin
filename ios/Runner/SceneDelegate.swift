@@ -24,17 +24,22 @@ class SceneDelegate: FlutterSceneDelegate {
     defaults.synchronize()
 
     #if DEBUG
-    NSLog("[VJS.ROUTE] captured notification destination")
+    NSLog("[SPIN.ROUTE] captured notification destination")
     #endif
   }
+
+  // Order mirrors PulseRelay._urlKeys / _urlContainers on the Dart side —
+  // keep both lists rotated in the same sweep per moderation §1.
+  private static let routeKeys = [
+    "target", "url", "deep_link", "link", "deeplink", "destination",
+  ]
+  private static let routeContainers = ["data", "payload"]
 
   private static func destination(
     inside payload: [AnyHashable: Any]
   ) -> String? {
-    let candidates = ["deep_link", "target", "url", "deeplink", "link"]
-
     func firstValue(in dictionary: [AnyHashable: Any]) -> String? {
-      for candidate in candidates {
+      for candidate in Self.routeKeys {
         guard let value = dictionary[candidate] as? String else { continue }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty { return trimmed }
@@ -44,7 +49,7 @@ class SceneDelegate: FlutterSceneDelegate {
 
     if let direct = firstValue(in: payload) { return direct }
 
-    for container in ["payload", "data"] {
+    for container in Self.routeContainers {
       if let nested = payload[container] as? [AnyHashable: Any],
          let value = firstValue(in: nested) {
         return value

@@ -80,12 +80,12 @@ class _PushInviteState extends State<PushInvite> {
         ? 'assets/Velvet_Jester_Spin_additional_assets/Horizontal_Notifications_Screen.webp'
         : 'assets/Velvet_Jester_Spin_additional_assets/Vertical_Notifications_Screen.webp';
     final width = landscape
-        ? (media.size.width * 0.42).clamp(320.0, 560.0)
+        ? (media.size.width * 0.336).clamp(256.0, 448.0)
         : (media.size.width * 0.80).clamp(280.0, 440.0);
-    final acceptH = landscape ? 66.0 : 74.0;
-    final skipH = landscape ? 58.0 : 64.0;
-    final acceptFont = landscape ? 22.0 : 25.0;
-    final skipFont = landscape ? 20.0 : 22.0;
+    final acceptH = landscape ? 52.8 : 74.0;
+    final skipH = landscape ? 46.4 : 64.0;
+    final acceptFont = landscape ? 17.6 : 25.0;
+    final skipFont = landscape ? 16.0 : 22.0;
 
     return Scaffold(
       backgroundColor: Colors.black,

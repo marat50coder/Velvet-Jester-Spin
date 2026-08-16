@@ -28,6 +28,10 @@
 	<true/>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Your device identifier helps us understand which campaigns bring players to Velvet Jester Spin.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Velvet Jester Spin uses the camera when you choose to add a photo to your jester profile.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Velvet Jester Spin lets you choose images to personalize your jester profile.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
