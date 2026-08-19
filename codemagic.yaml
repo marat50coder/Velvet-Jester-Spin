@@ -37,14 +37,15 @@ workflows:
           include: true
 
     scripts:
-      # Firebase ships as a CocoaPod for us (the SpinMediaNotification NSE
-      # target needs Firebase/Messaging via Pods, see ios/Podfile:42).
-      # Flutter 3.24+ enables Swift Package Manager globally by default,
-      # which then auto-adds firebase-ios-sdk as an SPM package on top of
-      # the pod — the two modules collide with "Redefinition of module
-      # 'Firebase'". The env var in `environment.vars` is the primary
-      # switch; this line is a redundancy for CI images that pin the
-      # feature to on regardless of env.
+      # Firebase ships as a CocoaPod for the Runner target (via the
+      # firebase_core / firebase_messaging plugin podspecs). Flutter 3.24+
+      # enables Swift Package Manager globally by default, which then
+      # auto-adds firebase-ios-sdk as an SPM package on top of the pod —
+      # the two modules collide with "Redefinition of module 'Firebase'".
+      # The env var in `environment.vars` is the primary switch; this line
+      # is a redundancy for CI images that pin the feature to on regardless
+      # of env. NSE (SpinMediaNotification) is Firebase-free — it downloads
+      # rich-media attachments over URLSession, no pod, no SPM.
       - name: Disable Swift Package Manager (CocoaPods-only project)
         script: flutter config --no-enable-swift-package-manager
 

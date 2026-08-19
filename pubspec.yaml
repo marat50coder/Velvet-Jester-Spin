@@ -17,7 +17,6 @@ dependencies:
   app_tracking_transparency: ^2.0.7
   firebase_core: ^4.13.0
   firebase_messaging: ^16.5.0
-  firebase_app_check: ^0.4.6
   connectivity_plus: ^7.3.1
   http: ^1.6.0
   device_info_plus: ^13.2.0

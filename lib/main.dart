@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -51,21 +50,6 @@ Future<void> main() async {
         debugPrint('[SPIN.BOOT] Firebase.initializeApp failed: $error');
         return true;
       }());
-    }
-    if (productionServicesReady) {
-      try {
-        await FirebaseAppCheck.instance.activate(
-          providerApple: kDebugMode
-              ? const AppleDebugProvider()
-              : const AppleAppAttestWithDeviceCheckFallbackProvider(),
-        );
-      } catch (error) {
-        // App Check must never block FCM / gray routing.
-        assert(() {
-          debugPrint('[SPIN.BOOT] AppCheck skipped: $error');
-          return true;
-        }());
-      }
     }
   }
 

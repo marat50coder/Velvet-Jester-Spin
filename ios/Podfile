@@ -36,11 +36,11 @@ target 'Runner' do
   end
 end
 
-target 'SpinMediaNotification' do
-  use_frameworks!
-  platform :ios, '15.0'
-  pod 'Firebase/Messaging', '12.17.0' # match firebase_core resolved version
-end
+# SpinMediaNotification (NSE) is intentionally NOT a CocoaPods target.
+# It used to pin `pod 'Firebase/Messaging'`, which collided with the
+# firebase-ios-sdk that Flutter 3.24+ injects via Swift Package Manager
+# (`Redefinition of module 'Firebase'`). The extension now downloads
+# rich-media attachments itself (see NotificationService.swift).
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|

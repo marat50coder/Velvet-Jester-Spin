@@ -1,12 +1,6 @@
 PODS:
   - app_tracking_transparency (0.0.1):
     - Flutter
-  - AppCheckCore (11.3.1):
-    - GoogleUtilities/Environment (~> 8.0)
-    - GoogleUtilities/UserDefaults (~> 8.0)
-    - PromisesObjC (~> 2.4)
-    - PromisesSwift (~> 2.4)
-    - RecaptchaInterop (~> 101.0)
   - appsflyer_sdk (6.18.1):
     - appsflyer_sdk/Core (= 6.18.1)
   - appsflyer_sdk/Core (6.18.1):
@@ -27,11 +21,6 @@ PODS:
   - Firebase/Messaging (12.17.0):
     - Firebase/CoreOnly
     - FirebaseMessaging (~> 12.17.0)
-  - firebase_app_check (0.4.6):
-    - Firebase/CoreOnly (~> 12.17.0)
-    - firebase_core
-    - FirebaseAppCheck (~> 12.17.0)
-    - Flutter
   - firebase_core (4.13.0):
     - Firebase/CoreOnly (= 12.17.0)
     - Flutter
@@ -39,13 +28,6 @@ PODS:
     - Firebase/Messaging (= 12.17.0)
     - firebase_core
     - Flutter
-  - FirebaseAppCheck (12.17.0):
-    - AppCheckCore (~> 11.3)
-    - FirebaseAppCheckInterop (~> 12.17.0)
-    - FirebaseCore (~> 12.17.0)
-    - GoogleUtilities/Environment (~> 8.1)
-    - GoogleUtilities/UserDefaults (~> 8.1)
-  - FirebaseAppCheckInterop (12.17.0)
   - FirebaseCore (12.17.0):
     - FirebaseCoreInternal (~> 12.17.0)
     - GoogleUtilities/Environment (~> 8.1)
@@ -103,9 +85,6 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.1)
-  - PromisesSwift (2.4.1):
-    - PromisesObjC (= 2.4.1)
-  - RecaptchaInterop (101.0.0)
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
@@ -121,8 +100,6 @@ DEPENDENCIES:
   - audioplayers_darwin (from `.symlinks/plugins/audioplayers_darwin/darwin`)
   - connectivity_plus (from `.symlinks/plugins/connectivity_plus/ios`)
   - device_info_plus (from `.symlinks/plugins/device_info_plus/ios`)
-  - Firebase/Messaging (= 12.17.0)
-  - firebase_app_check (from `.symlinks/plugins/firebase_app_check/ios`)
   - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
   - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
   - Flutter (from `Flutter`)
@@ -133,11 +110,8 @@ DEPENDENCIES:
 
 SPEC REPOS:
   trunk:
-    - AppCheckCore
     - AppsFlyerFramework
     - Firebase
-    - FirebaseAppCheck
-    - FirebaseAppCheckInterop
     - FirebaseCore
     - FirebaseCoreInternal
     - FirebaseInstallations
@@ -146,8 +120,6 @@ SPEC REPOS:
     - GoogleUtilities
     - nanopb
     - PromisesObjC
-    - PromisesSwift
-    - RecaptchaInterop
 
 EXTERNAL SOURCES:
   app_tracking_transparency:
@@ -160,8 +132,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/connectivity_plus/ios"
   device_info_plus:
     :path: ".symlinks/plugins/device_info_plus/ios"
-  firebase_app_check:
-    :path: ".symlinks/plugins/firebase_app_check/ios"
   firebase_core:
     :path: ".symlinks/plugins/firebase_core/ios"
   firebase_messaging:
@@ -179,18 +149,14 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   app_tracking_transparency: 3d84f147f67ca82d3c15355c36b1fa6b66ca7c92
-  AppCheckCore: e215d35177a9cf469927863e69c13e220df32a8b
   appsflyer_sdk: f0bd7be69dca64aef6d569aa6bd3ef8cd8228236
   AppsFlyerFramework: 319c8357ea52a559c27a7b474f0b50833e76e3eb
   audioplayers_darwin: 835ced6edd4c9fc8ebb0a7cc9e294a91d99917d5
   connectivity_plus: cb623214f4e1f6ef8fe7403d580fdad517d2f7dd
   device_info_plus: 21fcca2080fbcd348be798aa36c3e5ed849eefbe
   Firebase: e8400c058702940d53f31fc0653e4e7a06332326
-  firebase_app_check: 5da86a4ec92047b87f16009122e2c0e23864516e
   firebase_core: c94f9efeed0ded590b7eecaf6110a374eb865d7a
   firebase_messaging: 00bcc97454f71d0dbe0a8adc6f2abf952320cfb2
-  FirebaseAppCheck: 64d364d08ad1f6e8e084f7183c802df0a69eba3c
-  FirebaseAppCheckInterop: 6d4cd7b9df8047da8cfc98c3fef4618bab2a8e0d
   FirebaseCore: 52d4512296984a44a8c8870c6494870fc7aeee2f
   FirebaseCoreInternal: 3b310521b34a51ce3a6c605e4618b9aef8f6c112
   FirebaseInstallations: bd8e80f51d4c8bdc6c872011dede0b800c5b49ea
@@ -201,12 +167,10 @@ SPEC CHECKSUMS:
   GoogleUtilities: 766ace00c6b10d8148408f329d10c4f051931850
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: 752c3227f599e3467650e47ea36f433eeb10c273
-  PromisesSwift: 217dea0fd5d2ad65222a109c48698add13cc1c5b
-  RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
   webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
 
-PODFILE CHECKSUM: 800be22014a083383966f6b14567da47f438ffbc
+PODFILE CHECKSUM: c72504ff88a406c5439ee39d6df154672dcb09cd
 
 COCOAPODS: 1.17.0

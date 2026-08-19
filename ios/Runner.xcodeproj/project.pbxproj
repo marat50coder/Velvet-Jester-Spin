@@ -16,7 +16,6 @@
 		4E148F54E4589F5CAD35C006 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4261B1C0CF1557ADDAB45A40 /* NotificationService.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
-		7E127F3A9635A540D6B50DCB /* Pods_SpinMediaNotification.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2877992BB399AD19D7EE4530 /* Pods_SpinMediaNotification.framework */; };
 		85F0A8F68A406932949AB889 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04295173CDE82A5FC0D838A8 /* Pods_Runner.framework */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -70,13 +69,10 @@
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		1882539A75057235463AE193 /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
-		189FAC67971B1701657EA127 /* Pods-SpinMediaNotification.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpinMediaNotification.debug.xcconfig"; path = "Target Support Files/Pods-SpinMediaNotification/Pods-SpinMediaNotification.debug.xcconfig"; sourceTree = "<group>"; };
 		1A3E30402C9C699ABFBC0182 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		21A0122323245EB8B31DC5A7 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
-		2877992BB399AD19D7EE4530 /* Pods_SpinMediaNotification.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SpinMediaNotification.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		331C8081294A63A400263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		39CA68444B49AA0909BDAF66 /* Pods-SpinMediaNotification.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpinMediaNotification.profile.xcconfig"; path = "Target Support Files/Pods-SpinMediaNotification/Pods-SpinMediaNotification.profile.xcconfig"; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		3BBCFE07522F2327D2577A05 /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		4261B1C0CF1557ADDAB45A40 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
@@ -88,7 +84,6 @@
 		78F3B2B9119FA4E991C97CF7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		7FA44E5DAD90B3494E5100F4 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
-		812AB3B481A30EBDC9A1DA03 /* Pods-SpinMediaNotification.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SpinMediaNotification.release.xcconfig"; path = "Target Support Files/Pods-SpinMediaNotification/Pods-SpinMediaNotification.release.xcconfig"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -123,7 +118,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7E127F3A9635A540D6B50DCB /* Pods_SpinMediaNotification.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -139,9 +133,6 @@
 				1882539A75057235463AE193 /* Pods-RunnerTests.debug.xcconfig */,
 				7FA44E5DAD90B3494E5100F4 /* Pods-RunnerTests.release.xcconfig */,
 				3BBCFE07522F2327D2577A05 /* Pods-RunnerTests.profile.xcconfig */,
-				189FAC67971B1701657EA127 /* Pods-SpinMediaNotification.debug.xcconfig */,
-				812AB3B481A30EBDC9A1DA03 /* Pods-SpinMediaNotification.release.xcconfig */,
-				39CA68444B49AA0909BDAF66 /* Pods-SpinMediaNotification.profile.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -159,7 +150,6 @@
 			children = (
 				04295173CDE82A5FC0D838A8 /* Pods_Runner.framework */,
 				C55243C96AED67F03ADA9E11 /* Pods_RunnerTests.framework */,
-				2877992BB399AD19D7EE4530 /* Pods_SpinMediaNotification.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -233,7 +223,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D5A4D9B33072F098EEEDF93E /* Build configuration list for PBXNativeTarget "SpinMediaNotification" */;
 			buildPhases = (
-				E85DEA3A486F573F23865EC8 /* [CP] Check Pods Manifest.lock */,
 				B5435AEBAB3F7C2EE1EE2EB7 /* Sources */,
 				C29ED6A100017F0B6FF64DB5 /* Frameworks */,
 				978CEC0760015F66D8962D55 /* Resources */,
@@ -470,28 +459,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E85DEA3A486F573F23865EC8 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-SpinMediaNotification-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -558,7 +525,6 @@
 /* Begin XCBuildConfiguration section */
 		214EE46C5E43FA09C0593A1D /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 189FAC67971B1701657EA127 /* Pods-SpinMediaNotification.debug.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -701,7 +667,6 @@
 		};
 		58F378CA9EE445E5C9DD1070 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 812AB3B481A30EBDC9A1DA03 /* Pods-SpinMediaNotification.release.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -877,7 +842,6 @@
 		};
 		FD49060916A618A901D45864 /* Profile */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 39CA68444B49AA0909BDAF66 /* Pods-SpinMediaNotification.profile.xcconfig */;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
