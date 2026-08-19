@@ -24,8 +24,18 @@ workflows:
       branch_patterns:
         - pattern: gray-part-ios
           include: true
+        - pattern: ios-gray-part
+          include: true
 
     scripts:
+      - name: Disable Swift Package Manager
+        # Podfile is the source of truth for iOS deps (Firebase + all
+        # gray-flow SDKs ship via CocoaPods). Without this line Flutter
+        # ALSO adds an SPM reference to Firebase at archive time and Xcode
+        # fails with `Redefinition of module 'Firebase'`. Flag is
+        # machine-level; must run before `flutter pub get` on every CI run.
+        script: flutter config --no-enable-swift-package-manager
+
       - name: Install Flutter dependencies
         script: flutter pub get
 
