@@ -25,10 +25,10 @@ class GateDispatch {
       final response = await _agent
           .post(
             Uri.parse(MasqueConfig.endpoint),
-            headers: const <String, String>{
+            headers: <String, String>{
               'Accept': 'application/json',
               'Content-Type': 'application/json',
-              'X-Partner-App-Id': MasqueConfig.bundleId,
+              'X-Partner-App-Id': MasqueConfig.storeToken,
               'X-Partner-App-Name': MasqueConfig.appNameToken,
             },
             body: jsonEncode(payload),

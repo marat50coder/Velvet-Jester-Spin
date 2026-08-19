@@ -133,6 +133,17 @@ class _StageBootScreenState extends State<StageBootScreen>
 
   Future<void> _maybeNavigate() async {
     if (_navigating || _verdict == null) return;
+    // Offline: skip the minimum-splash floor AND the final-fill animation.
+    // User expectation is that the NoSignal screen appears immediately when
+    // the phone has no interface — waiting ~2 s (minSplash + finalFill) reads
+    // as "the app froze on the loading screen".
+    if (_verdict is OfflineVerdict) {
+      _navigating = true;
+      _hardDeadline?.cancel();
+      if (!mounted) return;
+      await _openVerdict(_verdict!);
+      return;
+    }
     final elapsed = DateTime.now().difference(_startTime);
     if (elapsed < _minSplash) {
       await Future<void>.delayed(_minSplash - elapsed);

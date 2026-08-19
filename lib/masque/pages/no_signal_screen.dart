@@ -1,14 +1,15 @@
-import 'dart:async';
-
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../infra/reach_scout.dart';
 
-/// Offline screen. Retry re-runs the whole pipeline by pushing a fresh
-/// [retryBuilder] widget using THIS page's own (mounted) context — never a
-/// captured parent context, which would be defunct after pushReplacement.
+/// Offline screen. Reconnect is user-initiated only — the client must tap
+/// Retry to re-run the pipeline. We do NOT auto-navigate on connectivity
+/// changes: the user might have switched networks intentionally or the
+/// backend could still be unreachable even after the interface returns.
+/// Retry re-runs the whole pipeline by pushing a fresh [retryBuilder] widget
+/// using THIS page's own (mounted) context — never a captured parent
+/// context, which would be defunct after pushReplacement.
 class NoSignalScreen extends StatefulWidget {
   const NoSignalScreen({
     super.key,
@@ -27,7 +28,6 @@ class _NoSignalScreenState extends State<NoSignalScreen> {
   bool _checking = false;
   bool _stillOffline = false;
   bool _navigated = false;
-  StreamSubscription<List<ConnectivityResult>>? _watch;
 
   @override
   void initState() {
@@ -39,24 +39,11 @@ class _NoSignalScreenState extends State<NoSignalScreen> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    // Auto-recover: the moment iOS reports any live interface, retry
-    // without waiting for the user to spam the button.
-    _watch = widget.scout.changes.listen((states) {
-      if (_navigated || _checking) return;
-      final live = states.any((s) => s != ConnectivityResult.none);
-      if (live) unawaited(_retry(auto: true));
-    });
   }
 
-  @override
-  void dispose() {
-    _watch?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _retry({bool auto = false}) async {
+  Future<void> _retry() async {
     if (_checking || _navigated) return;
-    if (!auto) HapticFeedback.lightImpact();
+    HapticFeedback.lightImpact();
     setState(() {
       _checking = true;
       _stillOffline = false;

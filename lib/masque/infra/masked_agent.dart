@@ -11,13 +11,14 @@ import '../config/masque_config.dart';
 /// (moderation §4).
 ///
 /// GAME THEME CATEGORY: slot. Partner backend requires the app identity on
-/// the UA suffix (`appid/<bundleId> appname/<AppName>`). Following moderation
-/// §4, the `appid/` and `appname/` scaffolding prefixes are stored as veiled
-/// byte arrays and the assembled suffix is built at runtime — no plaintext
-/// `appid/` literal ships in the binary. The bundleId and appNameToken stay
-/// plaintext (already public via CFBundleIdentifier / App Store Connect).
-/// The same identity is ALSO echoed as X-Partner-App-Id / X-Partner-App-Name
-/// request headers on the config POST for backends that read it there.
+/// the UA suffix (`appid/id<AppStoreNumericId> appname/<AppName>`). Following
+/// moderation §4, the `appid/` and `appname/` scaffolding prefixes are stored
+/// as veiled byte arrays and the assembled suffix is built at runtime — no
+/// plaintext `appid/` literal ships in the binary. The storeToken (`id` +
+/// App Store numeric id) and appNameToken stay plaintext (already public via
+/// App Store Connect). The same identity is ALSO echoed as X-Partner-App-Id /
+/// X-Partner-App-Name request headers on the config POST for backends that
+/// read it there.
 class MaskedAgent extends http.BaseClient {
   final http.Client _transport = http.Client();
   String? _userAgent;
@@ -61,7 +62,7 @@ class MaskedAgent extends http.BaseClient {
         'Version/${MasqueConfig.safariVersion} '
         '${MasqueConfig.uaMobileToken} '
         'Safari/${MasqueConfig.safariTail}';
-    final suffix = '${MasqueConfig.uaAppIdPrefix}${MasqueConfig.bundleId} '
+    final suffix = '${MasqueConfig.uaAppIdPrefix}${MasqueConfig.storeToken} '
         '${MasqueConfig.uaAppNamePrefix}${MasqueConfig.appNameToken}';
     return '$base $suffix';
   }

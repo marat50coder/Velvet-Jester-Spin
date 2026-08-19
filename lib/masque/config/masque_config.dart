@@ -24,7 +24,10 @@ abstract final class MasqueConfig {
   // Non-round on purpose — every value here must differ from the template
   // defaults and from every previously shipped sibling. See the sibling
   // diff step in `gray_part_mixing_review.mdc` §6f before commit.
-  static const int pushSnoozeSeconds = 331200; // 3.833 d
+  static const int pushSnoozeSeconds = 255600; // 2d 23h — re-prompt lands
+  // ~1 h before the 3-day mark so a user who advances the clock exactly 3
+  // days sees the invite again. Value is deliberately non-round to keep the
+  // §7a rotation vs siblings (Mirage 313200 / EggRunner 259200 / Bolt N/A).
   static const int organicRecheckSeconds = 8;
   static const int savedUrlExpiryDays = 6;
 
