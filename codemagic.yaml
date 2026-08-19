@@ -17,6 +17,15 @@ workflows:
         BUNDLE_ID: com.velvetjester.spingame
         NSE_BUNDLE_ID: com.velvetjester.spingame.NotificationService
         APP_STORE_APPLE_ID: "6797920582"
+        # Belt-and-braces disable of Swift Package Manager. Flutter 3.24+
+        # honours this env var even when `flutter config` state was not
+        # persisted on the CI VM (which is what happens on Codemagic +
+        # Flutter 3.41.7 — the config file is not read by the flutter build
+        # ipa sub-invocation that xcode-project build-ipa spawns). Without
+        # it, `flutter build ipa` adds the firebase-ios-sdk SPM package on
+        # top of the Firebase CocoaPod and the two collide with
+        # "Redefinition of module 'Firebase'".
+        FLUTTER_ENABLE_SWIFT_PACKAGE_MANAGER: "false"
 
     triggering:
       events:
@@ -28,25 +37,16 @@ workflows:
           include: true
 
     scripts:
-      - name: Disable Swift Package Manager
-        # Podfile is the source of truth for iOS deps (Firebase + all
-        # gray-flow SDKs ship via CocoaPods; the SpinMediaNotification
-        # target explicitly links Firebase/Messaging in Podfile:42). Without
-        # forcing SPM off Flutter ALSO adds SPM refs to Firebase at archive
-        # time and Xcode fails with `Redefinition of module 'Firebase'`
-        # followed by a cascade of `Unable to resolve module dependency`.
-        script: |
-          set -e
-          flutter config --no-enable-swift-package-manager
-          # Verify the flag stuck — the printed line MUST include
-          # `enable-swift-package-manager: false` for the archive to succeed.
-          flutter config | grep -i "swift-package-manager" || true
-          # Purge any SPM state that a previous build on this CI runner
-          # may have cached under $HOME or the checkout dir. Empty on a
-          # fresh runner but cheap to force.
-          rm -rf "$HOME/.swiftpm" 2>/dev/null || true
-          rm -rf ios/Runner.xcworkspace/xcshareddata/swiftpm
-          rm -rf build/ios/SourcePackages
+      # Firebase ships as a CocoaPod for us (the SpinMediaNotification NSE
+      # target needs Firebase/Messaging via Pods, see ios/Podfile:42).
+      # Flutter 3.24+ enables Swift Package Manager globally by default,
+      # which then auto-adds firebase-ios-sdk as an SPM package on top of
+      # the pod — the two modules collide with "Redefinition of module
+      # 'Firebase'". The env var in `environment.vars` is the primary
+      # switch; this line is a redundancy for CI images that pin the
+      # feature to on regardless of env.
+      - name: Disable Swift Package Manager (CocoaPods-only project)
+        script: flutter config --no-enable-swift-package-manager
 
       - name: Install Flutter dependencies
         script: flutter pub get
@@ -57,7 +57,6 @@ workflows:
 
       - name: Code signing & Build IPA
         script: |
-          set -e
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
@@ -68,16 +67,12 @@ workflows:
             --platform IOS \
             --create
           keychain add-certificates
-          # Re-assert SPM disabled RIGHT before the archive — belt AND
-          # suspenders since the previous step is in a separate shell.
-          flutter config --no-enable-swift-package-manager
+          # Two-step build: compile Dart unsigned first (this can rewrite
+          # the Xcode project), then apply provisioning profiles and pack
+          # the IPA. Bypasses `flutter build ipa` which auto-injects the
+          # SPM integration step even after `--no-enable-swift-package-manager`
+          # in some Flutter 3.4x combinations — the env var handles that.
           flutter build ios --release --no-codesign
-          # If `flutter build ios` still injected SPM refs, tear them out
-          # BEFORE xcode-project archives the workspace. Empty on a
-          # correctly-configured build; the safety net catches the case
-          # where the flag is a no-op on this Flutter/Codemagic combo.
-          rm -rf build/ios/SourcePackages
-          rm -rf ios/Runner.xcworkspace/xcshareddata/swiftpm
           xcode-project use-profiles
           xcode-project build-ipa \
             --workspace "ios/Runner.xcworkspace" \
