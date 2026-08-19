@@ -30,11 +30,23 @@ workflows:
     scripts:
       - name: Disable Swift Package Manager
         # Podfile is the source of truth for iOS deps (Firebase + all
-        # gray-flow SDKs ship via CocoaPods). Without this line Flutter
-        # ALSO adds an SPM reference to Firebase at archive time and Xcode
-        # fails with `Redefinition of module 'Firebase'`. Flag is
-        # machine-level; must run before `flutter pub get` on every CI run.
-        script: flutter config --no-enable-swift-package-manager
+        # gray-flow SDKs ship via CocoaPods; the SpinMediaNotification
+        # target explicitly links Firebase/Messaging in Podfile:42). Without
+        # forcing SPM off Flutter ALSO adds SPM refs to Firebase at archive
+        # time and Xcode fails with `Redefinition of module 'Firebase'`
+        # followed by a cascade of `Unable to resolve module dependency`.
+        script: |
+          set -e
+          flutter config --no-enable-swift-package-manager
+          # Verify the flag stuck — the printed line MUST include
+          # `enable-swift-package-manager: false` for the archive to succeed.
+          flutter config | grep -i "swift-package-manager" || true
+          # Purge any SPM state that a previous build on this CI runner
+          # may have cached under $HOME or the checkout dir. Empty on a
+          # fresh runner but cheap to force.
+          rm -rf "$HOME/.swiftpm" 2>/dev/null || true
+          rm -rf ios/Runner.xcworkspace/xcshareddata/swiftpm
+          rm -rf build/ios/SourcePackages
 
       - name: Install Flutter dependencies
         script: flutter pub get
@@ -45,6 +57,7 @@ workflows:
 
       - name: Code signing & Build IPA
         script: |
+          set -e
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
@@ -55,7 +68,16 @@ workflows:
             --platform IOS \
             --create
           keychain add-certificates
+          # Re-assert SPM disabled RIGHT before the archive — belt AND
+          # suspenders since the previous step is in a separate shell.
+          flutter config --no-enable-swift-package-manager
           flutter build ios --release --no-codesign
+          # If `flutter build ios` still injected SPM refs, tear them out
+          # BEFORE xcode-project archives the workspace. Empty on a
+          # correctly-configured build; the safety net catches the case
+          # where the flag is a no-op on this Flutter/Codemagic combo.
+          rm -rf build/ios/SourcePackages
+          rm -rf ios/Runner.xcworkspace/xcshareddata/swiftpm
           xcode-project use-profiles
           xcode-project build-ipa \
             --workspace "ios/Runner.xcworkspace" \
