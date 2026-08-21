@@ -55,13 +55,32 @@ class StageDirector {
     }
 
     pulse.onTokenChanged = _refreshForToken;
-    final coldRoute = await ColdTapReader.consume();
-    if (coldRoute != null) {
+
+    // Firebase `getInitialMessage` MUST resolve before we sample the
+    // cold-tap URL — with `FirebaseAppDelegateProxyEnabled=true` (default)
+    // Firebase swizzles the AppDelegate proxy and eats the notification
+    // response, so `SceneDelegate` never fires and `ColdTapReader.consume`
+    // alone returns null on the terminated-tap path. `PulseRelay._boot`
+    // writes any initial-message URL into the vault via
+    // `_vault.stashPushUrl`, which the drain below picks up. Skipping
+    // this await produced the "2nd push opens the previous session's
+    // URL" bug (a stale `savedUrl` won in `_returningPortal`).
+    try {
+      await pulse.boot();
+    } catch (_) {}
+
+    // Drain BOTH sources — SceneDelegate (a) fires when Firebase's proxy
+    // is off or the OS routed the tap to Scene first, and vault (b) is
+    // Firebase's `getInitialMessage` path. Consume both so a stale
+    // vault entry never fires on the next `AppLifecycleState.resumed`.
+    final tapUrl = await ColdTapReader.consume();
+    final vaultUrl = await vault.consumePushUrl();
+    final coldUrl = tapUrl ?? vaultUrl;
+    if (coldUrl != null && coldUrl.isNotEmpty) {
       await vault.saveRoute(StageRoute.portal);
-      await vault.consumePushUrl();
       unawaited(_backgroundDispatch());
       onProgress(1);
-      return WebVerdict(coldRoute, coldLaunch: true);
+      return WebVerdict(coldUrl, coldLaunch: true);
     }
 
     onProgress(0.12);
