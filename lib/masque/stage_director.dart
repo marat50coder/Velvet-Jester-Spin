@@ -137,6 +137,15 @@ class StageDirector {
     }
     final cached = await vault.savedUrl();
     if (cached != null && !vault.cachedUrlExpired) {
+      // Warm up AppsFlyer + FCM boot in the background even on the fast
+      // cached-URL path: without this, a later PushInvite → Allow tap
+      // fires `_refreshForToken` on a compose() that has no AppsFlyer
+      // signals (empty `af_id`, missing install/reopen/deepLink) and the
+      // backend cannot re-associate the new FCM token with the user
+      // record. Symptom: push #1 sometimes arrives on the previously
+      // stored token, push #2 (after FCM rotates the token) is lost.
+      unawaited(pulse.boot());
+      unawaited(tracker.start());
       progress(1);
       return WebVerdict(cached);
     }
@@ -192,7 +201,15 @@ class StageDirector {
   }
 
   Future<void> _refreshForToken(String token) async {
+    // Fires from `PulseRelay._performPermissionRequest` after the user
+    // grants push permission (potentially days after boot — cached-URL
+    // path in `_returningPortal` may have short-circuited without ever
+    // starting AppsFlyer). Await signals here so the token-refresh POST
+    // carries a real `af_id` and the attribution keys the backend needs
+    // to update the user record. A missing af_id was silently dropping
+    // the new token server-side (push #2 stopped arriving after Allow).
     try {
+      await tracker.awaitSignals(installTimeout: const Duration(seconds: 6));
       await _requestConfig(token: token);
     } catch (_) {}
   }
